@@ -35,8 +35,10 @@ workflows:
           if [ -z "$EXPO_TOKEN" ]; then
             echo "❌ Error: EXPO_TOKEN is not set. Please add it in Codemagic environment variables."
             exit 1
+          else
+            echo "✅ Expo authentication successful."
+            npx expo login --token $EXPO_TOKEN
           fi
-          echo "✅ Expo authentication successful."
 
       - name: Build Android APK
         script: |
