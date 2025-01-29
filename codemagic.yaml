@@ -50,12 +50,19 @@ workflows:
         script: |
           export EXPO_TOKEN=$EXPO_TOKEN
           echo "EXPO_TOKEN exported"
+          
           if [ -z "$EXPO_TOKEN" ]; then
             echo "❌ EXPO_TOKEN is not set. Please add it in Codemagic environment variables."
             exit 1
           fi
-          npx eas account:login --token "$EXPO_TOKEN" || { echo "Login failed"; exit 1; }
-          npx eas whoami
+
+          echo "🔍 Testing EXPO_TOKEN with eas whoami..."
+          npx eas whoami || {
+            echo "❌ Authentication failed. Trying manual login..."
+            echo "$EXPO_TOKEN" | npx eas account:login --token || { echo "❌ Login failed"; exit 1; }
+          }
+
+          echo "✅ Expo authentication successful!"
 
       - name: Build Android APK
         script: |
