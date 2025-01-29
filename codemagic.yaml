@@ -56,13 +56,15 @@ workflows:
             exit 1
           fi
 
-          echo "🔍 Testing EXPO_TOKEN with eas whoami..."
-          npx eas whoami || {
-            echo "❌ Authentication failed. Trying manual login..."
-            echo "$EXPO_TOKEN" | npx eas account:login --token || { echo "❌ Login failed"; exit 1; }
-          }
+          echo "🔍 Checking Expo authentication..."
+          RESPONSE=$(curl -s -H "Authorization: Bearer $EXPO_TOKEN" https://exp.host/--/api/v2/authenticatedUser)
+          if echo "$RESPONSE" | grep -q "errors"; then
+            echo "❌ Invalid EXPO_TOKEN! Please regenerate and update it."
+            exit 1
+          fi
 
-          echo "✅ Expo authentication successful!"
+          echo "✅ EXPO_TOKEN is valid. Proceeding with authentication..."
+          npx eas whoami
 
       - name: Build Android APK
         script: |
