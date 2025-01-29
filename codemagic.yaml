@@ -6,9 +6,12 @@ workflows:
       vars:
         NODE_VERSION: 18
         CI: 1
-        # EXPO_TOKEN is set in Codemagic secure environment variables, NOT here
+        # EXPO_TOKEN MUST be set in Codemagic secure environment variables, NOT here
 
     scripts:
+      - name: Print all environment variables (for debugging - REMOVE in production)
+        script: printenv  # This will show EVERYTHING
+
       - name: Install dependencies
         script: npm ci
 
@@ -22,16 +25,6 @@ workflows:
             npm install -g expo-cli
           fi
           expo --version
-
-      - name: Debug EXPO_TOKEN (for debugging only - REMOVE in production)
-        script: |
-          if [ -z "$EXPO_TOKEN" ]; then
-            echo "❌ EXPO_TOKEN is NOT set!"
-            exit 1
-          else
-            echo "✅ EXPO_TOKEN is set (Masked): ${EXPO_TOKEN:0:4}********"
-            printenv | grep EXPO_TOKEN # Show all env vars containing EXPO_TOKEN
-          fi
 
       - name: Create eas.json if missing
         script: |
@@ -52,12 +45,12 @@ workflows:
       - name: Authenticate with Expo
         script: |
           if [ -z "$EXPO_TOKEN" ]; then
-            echo "❌ EXPO_TOKEN is not set. Please add it in Codemagic *secure* environment variables."
+            echo "❌ EXPO_TOKEN is not set.  Check Codemagic *secure* environment variables."
             exit 1
           fi
 
-          echo "✅ EXPO_TOKEN is set. Proceeding with authentication..."
-          npx eas whoami || exit 1  # Authenticate and exit if fails
+          echo "✅ EXPO_TOKEN is set (Masked): ${EXPO_TOKEN:0:4}********" # Masked for security
+          npx eas whoami || exit 1 # Authenticate, exit if fails
 
       - name: Build Android APK
         script: |
