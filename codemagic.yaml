@@ -6,7 +6,7 @@ workflows:
       vars:
         NODE_VERSION: 18
         CI: 1
-        EXPO_TOKEN: $EXPO_TOKEN
+        # EXPO_TOKEN must be set in Codemagic UI under secure environment variables
     scripts:
       - name: Install dependencies
         script: npm ci
@@ -25,7 +25,7 @@ workflows:
       - name: Debug EXPO_TOKEN
         script: |
           if [ -z "$EXPO_TOKEN" ]; then
-            echo "❌ EXPO_TOKEN is NOT set!"
+            echo "❌ EXPO_TOKEN is NOT set! Ensure it's in Codemagic secure environment variables."
             exit 1
           else
             echo "✅ EXPO_TOKEN is set (Masked): ${EXPO_TOKEN:0:4}********"
@@ -53,35 +53,21 @@ EOL
           export EXPO_TOKEN="$EXPO_TOKEN"
           echo "EXPO_TOKEN exported"
           
-          if [ -z "$EXPO_TOKEN" ]; then
-            echo "❌ EXPO_TOKEN is not set. Please add it in Codemagic environment variables."
-            exit 1
-          fi
-
           echo "🔍 Checking Expo authentication..."
-          RESPONSE=$(curl -s -H "Authorization: Bearer $EXPO_TOKEN" https://exp.host/--/api/v2/authenticatedUser)
-          echo "🔍 Full API Response: $RESPONSE"
-
-          if echo "$RESPONSE" | grep -q "errors"; then
-            echo "❌ Invalid EXPO_TOKEN! Please regenerate and update it."
-            exit 1
-          fi
-
-          echo "✅ EXPO_TOKEN is valid. Proceeding with authentication..."
           if ! npx eas whoami; then
-            echo "❌ Authentication failed with eas whoami"
+            echo "❌ Authentication failed! Check if EXPO_TOKEN is valid or refresh it."
             exit 1
           fi
 
       - name: Build Android APK
         script: |
           export EXPO_TOKEN="$EXPO_TOKEN"
-          npx eas build --platform android --profile development --non-interactive
+          npx eas build --platform android --profile development --non-interactive || exit 1
 
       - name: Build iOS IPA
         script: |
           export EXPO_TOKEN="$EXPO_TOKEN"
-          npx eas build --platform ios --profile development --non-interactive
+          npx eas build --platform ios --profile development --non-interactive || exit 1
 
     artifacts:
       - "**/*.apk"
