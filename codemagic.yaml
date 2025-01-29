@@ -15,6 +15,14 @@ workflows:
       - name: Reinstall EAS CLI
         script: npm install -g eas-cli@latest
 
+      - name: Verify Expo CLI
+        script: |
+          if ! command -v expo &> /dev/null; then
+            echo "Expo CLI not found! Installing..."
+            npm install -g expo-cli
+          fi
+          expo --version
+
       - name: Create eas.json if missing
         script: |
           if [ ! -f "eas.json" ]; then
