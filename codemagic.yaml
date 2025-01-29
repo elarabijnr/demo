@@ -3,26 +3,22 @@ workflows:
     name: React Native Tally App
     instance_type: mac_mini_m1
     environment:
+      groups:
+        - expo_credentials # Ensure you create this group in Codemagic UI
       vars:
-        EXPO_TOKEN: "\${EXPO_TOKEN}" # Set this in Codemagic UI under Environment Variables
-      node: 18
+        NODE_VERSION: 18
     scripts:
       - name: Install dependencies
-        script: |
-          npm install
-      - name: Log in to Expo
-        script: |
-          npx expo login --non-interactive --username "\${EXPO_USERNAME}" --password "\${EXPO_PASSWORD}"
+        script: npm install
       - name: Build Android APK
-        script: |
-          npx eas build --platform android --profile preview --non-interactive
-      - name: Build iOS IPA (if applicable)
-        script: |
-          npx eas build --platform ios --profile preview --non-interactive
+        script: npx eas build --platform android --profile preview --non-interactive
+      - name: Build iOS IPA
+        script: npx eas build --platform ios --profile preview --non-interactive
     artifacts:
       - build/**/android/**/*.apk
       - build/**/ios/**/*.ipa
     publishing:
       email:
         recipients:
+          - "kengyap@upm.edu.my"
           - "elarabijnr@gmail.com"
