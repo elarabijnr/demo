@@ -4,42 +4,54 @@ workflows:
     instance_type: mac_mini_m1
     environment:
       groups:
-        - expo_credentials # Ensure you create this group in Codemagic UI
+        - expo_credentials # Ensure you create this group in Codemagic UI with EXPO_TOKEN
       vars:
         NODE_VERSION: 18
         CI: 1
     scripts:
       - name: Install dependencies
         script: npm ci
+
       - name: Reinstall EAS CLI
         script: npm install -g eas-cli@latest
+
       - name: Create eas.json if missing
         script: |
           if [ ! -f "eas.json" ]; then
-            echo '{
+            cat <<EOF > eas.json
+            {
               "build": {
                 "development": {
+                  "extends": "default",
                   "distribution": "internal",
                   "android": { "buildType": "apk" },
                   "ios": { "simulator": true }
                 }
               }
-            }' > eas.json
+            }
+            EOF
           fi
+
       - name: Authenticate with Expo using EXPO_TOKEN
         script: |
           if [ -z "$EXPO_TOKEN" ]; then
-            echo "Error: EXPO_TOKEN is not set. Please add it in Codemagic environment variables."
+            echo "❌ Error: EXPO_TOKEN is not set. Please add it in Codemagic environment variables."
             exit 1
           fi
-          echo "Expo authentication successful."
+          echo "✅ Expo authentication successful."
+
       - name: Build Android APK
-        script: EXPO_TOKEN=$EXPO_TOKEN npx eas build --platform android --profile development --non-interactive
+        script: |
+          EXPO_TOKEN=$EXPO_TOKEN npx eas build --platform android --profile development --non-interactive
+
       - name: Build iOS IPA
-        script: EXPO_TOKEN=$EXPO_TOKEN npx eas build --platform ios --profile development --non-interactive
+        script: |
+          EXPO_TOKEN=$EXPO_TOKEN npx eas build --platform ios --profile development --non-interactive
+
     artifacts:
-      - build/**/android/**/*.apk
-      - build/**/ios/**/*.ipa
+      - "**/*.apk"  # Adjusted for correct APK output path
+      - "**/*.ipa"  # Adjusted for correct IPA output path
+
     publishing:
       email:
         recipients:
