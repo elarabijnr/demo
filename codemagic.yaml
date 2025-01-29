@@ -6,7 +6,8 @@ workflows:
       vars:
         NODE_VERSION: 18
         CI: 1
-        EXPO_TOKEN: $EXPO_TOKEN
+        # EXPO_TOKEN is set in Codemagic environment variables, NOT here
+
     scripts:
       - name: Install dependencies
         script: npm ci
@@ -22,7 +23,7 @@ workflows:
           fi
           expo --version
 
-      - name: Debug EXPO_TOKEN
+      - name: Debug EXPO_TOKEN (for debugging only)
         script: |
           if [ -z "$EXPO_TOKEN" ]; then
             echo "❌ EXPO_TOKEN is NOT set!"
@@ -45,43 +46,34 @@ workflows:
                 }
               }
             }
-          EOL
+            EOL
           fi
 
-      - name: Authenticate with Expo using EXPO_TOKEN
+      - name: Authenticate with Expo
         script: |
-          export EXPO_TOKEN="$EXPO_TOKEN"
-          echo "EXPO_TOKEN exported"
-          
           if [ -z "$EXPO_TOKEN" ]; then
             echo "❌ EXPO_TOKEN is not set. Please add it in Codemagic environment variables."
             exit 1
           fi
 
-          echo "🔍 Checking Expo authentication..."
-          RESPONSE=$(curl -s -H "Authorization: Bearer $EXPO_TOKEN" https://exp.host/--/api/v2/authenticatedUser)
-          echo "🔍 Full API Response: $RESPONSE"
-
-          if echo "$RESPONSE" | grep -q "errors"; then
-            echo "❌ Invalid EXPO_TOKEN! Please regenerate and update it."
-            exit 1
-          fi
-
-          echo "✅ EXPO_TOKEN is valid. Proceeding with authentication..."
-          if ! npx eas whoami; then
-            echo "❌ Authentication failed with eas whoami"
-            exit 1
-          fi
+          echo "✅ EXPO_TOKEN is set. Proceeding with authentication..."
+          npx eas whoami  # Correct way to authenticate
 
       - name: Build Android APK
         script: |
-          export EXPO_TOKEN="$EXPO_TOKEN"
-          npx eas build --platform android --profile development --non-interactive
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "❌ EXPO_TOKEN is not set."
+            exit 1
+          fi
+          npx eas build --platform android --profile development --non-interactive || exit 1  # Exit on failure
 
       - name: Build iOS IPA
         script: |
-          export EXPO_TOKEN="$EXPO_TOKEN"
-          npx eas build --platform ios --profile development --non-interactive
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "❌ EXPO_TOKEN is not set."
+            exit 1
+          fi
+          npx eas build --platform ios --profile development --non-interactive || exit 1  # Exit on failure
 
     artifacts:
       - "**/*.apk"
