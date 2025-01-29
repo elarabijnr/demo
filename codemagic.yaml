@@ -18,8 +18,7 @@ workflows:
       - name: Create eas.json if missing
         script: |
           if [ ! -f "eas.json" ]; then
-            cat <<EOF > eas.json
-            {
+            echo '{
               "build": {
                 "development": {
                   "extends": "default",
@@ -28,8 +27,7 @@ workflows:
                   "ios": { "simulator": true }
                 }
               }
-            }
-            EOF
+            }' > eas.json
           fi
 
       - name: Authenticate with Expo using EXPO_TOKEN
