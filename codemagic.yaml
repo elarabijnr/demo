@@ -38,7 +38,6 @@ workflows:
 {
   "build": {
     "development": {
-      "extends": "default",
       "distribution": "internal",
       "android": { "buildType": "apk" },
       "ios": { "simulator": true }
