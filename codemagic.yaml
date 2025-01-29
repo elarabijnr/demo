@@ -6,19 +6,18 @@ workflows:
       vars:
         NODE_VERSION: 18
         CI: 1
-        # EXPO_TOKEN must be set in Codemagic UI under secure environment variables
     scripts:
       - name: Install dependencies
         script: npm ci
 
-      - name: Reinstall EAS CLI
+      - name: Install EAS CLI
         script: npm install -g eas-cli@latest
 
       - name: Verify Expo CLI
         script: |
           if ! command -v expo &> /dev/null; then
             echo "Expo CLI not found! Installing..."
-            npm install -g expo-cli@latest  # Ensure you're using the latest stable version
+            npm install -g expo-cli@latest
           fi
           expo --version
 
@@ -31,10 +30,11 @@ workflows:
             echo "✅ EXPO_TOKEN is set (Masked): ${EXPO_TOKEN:0:4}********"
           fi
 
-      - name: Create eas.json if missing
+      - name: Ensure eas.json Exists
         script: |
           if [ ! -f "eas.json" ]; then
-            echo '{
+            cat <<EOF > eas.json
+            {
               "build": {
                 "development": {
                   "distribution": "internal",
@@ -42,14 +42,12 @@ workflows:
                   "ios": { "simulator": true }
                 }
               }
-            }' > eas.json
+            }
+            EOF
           fi
 
       - name: Authenticate with Expo using EXPO_TOKEN
         script: |
-          export EXPO_TOKEN="$EXPO_TOKEN"
-          echo "EXPO_TOKEN exported"
-          
           echo "🔍 Checking Expo authentication..."
           if ! eas whoami; then
             echo "❌ Authentication failed! Check if EXPO_TOKEN is valid or refresh it."
@@ -58,12 +56,10 @@ workflows:
 
       - name: Build Android APK
         script: |
-          export EXPO_TOKEN="$EXPO_TOKEN"
           npx eas build --platform android --profile development --non-interactive || { echo "❌ Android build failed"; exit 1; }
 
       - name: Build iOS IPA
         script: |
-          export EXPO_TOKEN="$EXPO_TOKEN"
           npx eas build --platform ios --profile development --non-interactive || { echo "❌ iOS build failed"; exit 1; }
 
     artifacts:
