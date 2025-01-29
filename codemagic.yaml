@@ -6,12 +6,8 @@ workflows:
       vars:
         NODE_VERSION: 18
         CI: 1
-        # EXPO_TOKEN MUST be set in Codemagic secure environment variables, NOT here
-
+        EXPO_TOKEN: $EXPO_TOKEN
     scripts:
-      - name: Print all environment variables (for debugging - REMOVE in production)
-        script: printenv  # This will show EVERYTHING
-
       - name: Install dependencies
         script: npm ci
 
@@ -26,47 +22,66 @@ workflows:
           fi
           expo --version
 
+      - name: Debug EXPO_TOKEN
+        script: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "❌ EXPO_TOKEN is NOT set!"
+            exit 1
+          else
+            echo "✅ EXPO_TOKEN is set (Masked): ${EXPO_TOKEN:0:4}********"
+          fi
+
       - name: Create eas.json if missing
         script: |
           if [ ! -f "eas.json" ]; then
             cat <<EOL > eas.json
-            {
-              "build": {
-                "development": {
-                  "extends": "default",
-                  "distribution": "internal",
-                  "android": { "buildType": "apk" },
-                  "ios": { "simulator": true }
-                }
-              }
-            EOL
+{
+  "build": {
+    "development": {
+      "extends": "default",
+      "distribution": "internal",
+      "android": { "buildType": "apk" },
+      "ios": { "simulator": true }
+    }
+  }
+}
+EOL
           fi
 
-      - name: Authenticate with Expo
+      - name: Authenticate with Expo using EXPO_TOKEN
         script: |
+          export EXPO_TOKEN="$EXPO_TOKEN"
+          echo "EXPO_TOKEN exported"
+          
           if [ -z "$EXPO_TOKEN" ]; then
-            echo "❌ EXPO_TOKEN is not set.  Check Codemagic *secure* environment variables."
+            echo "❌ EXPO_TOKEN is not set. Please add it in Codemagic environment variables."
             exit 1
           fi
 
-          echo "✅ EXPO_TOKEN is set (Masked): ${EXPO_TOKEN:0:4}********" # Masked for security
-          npx eas whoami || exit 1 # Authenticate, exit if fails
+          echo "🔍 Checking Expo authentication..."
+          RESPONSE=$(curl -s -H "Authorization: Bearer $EXPO_TOKEN" https://exp.host/--/api/v2/authenticatedUser)
+          echo "🔍 Full API Response: $RESPONSE"
+
+          if echo "$RESPONSE" | grep -q "errors"; then
+            echo "❌ Invalid EXPO_TOKEN! Please regenerate and update it."
+            exit 1
+          fi
+
+          echo "✅ EXPO_TOKEN is valid. Proceeding with authentication..."
+          if ! npx eas whoami; then
+            echo "❌ Authentication failed with eas whoami"
+            exit 1
+          fi
 
       - name: Build Android APK
         script: |
-          if [ -z "$EXPO_TOKEN" ]; then
-            echo "❌ EXPO_TOKEN is not set."
-            exit 1
-          fi
-          npx eas build --platform android --profile development --non-interactive || exit 1
+          export EXPO_TOKEN="$EXPO_TOKEN"
+          npx eas build --platform android --profile development --non-interactive
 
       - name: Build iOS IPA
         script: |
-          if [ -z "$EXPO_TOKEN" ]; then
-            echo "❌ EXPO_TOKEN is not set."
-            exit 1
-          fi
-          npx eas build --platform ios --profile development --non-interactive || exit 1
+          export EXPO_TOKEN="$EXPO_TOKEN"
+          npx eas build --platform ios --profile development --non-interactive
 
     artifacts:
       - "**/*.apk"
