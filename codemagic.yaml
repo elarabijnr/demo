@@ -12,11 +12,18 @@ workflows:
         script: npm ci
       - name: Reinstall EAS CLI
         script: npm install -g eas-cli@latest
-      - name: Check if eas.json exists
+      - name: Create eas.json if missing
         script: |
           if [ ! -f "eas.json" ]; then
-            echo "Error: eas.json not found! Make sure it exists in the root folder."
-            exit 1
+            echo '{
+              "build": {
+                "development": {
+                  "distribution": "internal",
+                  "android": { "buildType": "apk" },
+                  "ios": { "simulator": true }
+                }
+              }
+            }' > eas.json
           fi
       - name: Log in to Expo
         script: npx expo login --non-interactive --username "$EXPO_USERNAME" --password "$EXPO_PASSWORD"
