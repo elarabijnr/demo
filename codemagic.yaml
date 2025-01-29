@@ -54,7 +54,7 @@ workflows:
             echo "❌ EXPO_TOKEN is not set. Please add it in Codemagic environment variables."
             exit 1
           fi
-          npx expo login --token $EXPO_TOKEN
+          npx eas whoami || echo "$EXPO_TOKEN" | npx eas account:login --token
 
       - name: Build Android APK
         script: |
