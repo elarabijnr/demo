@@ -3,11 +3,10 @@ workflows:
     name: React Native Tally App
     instance_type: mac_mini_m1
     environment:
-      groups:
-        - expo_credentials # Ensure you create this group in Codemagic UI with EXPO_TOKEN
       vars:
         NODE_VERSION: 18
         CI: 1
+        EXPO_TOKEN: $EXPO_TOKEN
     scripts:
       - name: Install dependencies
         script: npm ci
@@ -22,6 +21,15 @@ workflows:
             npm install -g expo-cli
           fi
           expo --version
+
+      - name: Debug EXPO_TOKEN
+        script: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "❌ EXPO_TOKEN is NOT set!"
+            exit 1
+          else
+            echo "✅ EXPO_TOKEN is set (Masked): ${EXPO_TOKEN:0:4}********"
+          fi
 
       - name: Create eas.json if missing
         script: |
@@ -40,14 +48,13 @@ workflows:
 
       - name: Authenticate with Expo using EXPO_TOKEN
         script: |
+          export EXPO_TOKEN=$EXPO_TOKEN
+          echo "EXPO_TOKEN exported"
           if [ -z "$EXPO_TOKEN" ]; then
-            echo "❌ Error: EXPO_TOKEN is not set. Please add it in Codemagic environment variables."
+            echo "❌ EXPO_TOKEN is not set. Please add it in Codemagic environment variables."
             exit 1
-          else
-            echo "✅ Expo authentication successful."
-            export EXPO_TOKEN=$EXPO_TOKEN
-            npx expo login --token $EXPO_TOKEN
           fi
+          npx expo login --token $EXPO_TOKEN
 
       - name: Build Android APK
         script: |
