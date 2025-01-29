@@ -34,17 +34,15 @@ workflows:
       - name: Create eas.json if missing
         script: |
           if [ ! -f "eas.json" ]; then
-            cat <<EOL > eas.json
-{
-  "build": {
-    "development": {
-      "distribution": "internal",
-      "android": { "buildType": "apk" },
-      "ios": { "simulator": true }
-    }
-  }
-}
-EOL
+            echo '{
+              "build": {
+                "development": {
+                  "distribution": "internal",
+                  "android": { "buildType": "apk" },
+                  "ios": { "simulator": true }
+                }
+              }
+            }' > eas.json
           fi
 
       - name: Authenticate with Expo using EXPO_TOKEN
