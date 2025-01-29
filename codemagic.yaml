@@ -37,16 +37,19 @@ workflows:
             exit 1
           else
             echo "✅ Expo authentication successful."
+            export EXPO_TOKEN=$EXPO_TOKEN
             npx expo login --token $EXPO_TOKEN
           fi
 
       - name: Build Android APK
         script: |
-          EXPO_TOKEN=$EXPO_TOKEN npx eas build --platform android --profile development --non-interactive
+          export EXPO_TOKEN=$EXPO_TOKEN
+          npx eas build --platform android --profile development --non-interactive
 
       - name: Build iOS IPA
         script: |
-          EXPO_TOKEN=$EXPO_TOKEN npx eas build --platform ios --profile development --non-interactive
+          export EXPO_TOKEN=$EXPO_TOKEN
+          npx eas build --platform ios --profile development --non-interactive
 
     artifacts:
       - "**/*.apk"  # Adjusted for correct APK output path
