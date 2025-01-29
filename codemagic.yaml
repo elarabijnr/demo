@@ -8,12 +8,24 @@ workflows:
       vars:
         NODE_VERSION: 18
     scripts:
+      - name: Use Correct Node Version
+        script: nvm use 18
       - name: Install dependencies
-        script: npm install
+        script: npm ci
+      - name: Reinstall EAS CLI
+        script: npm install -g eas-cli@latest
+      - name: Check if eas.json exists
+        script: |
+          if [ ! -f "eas.json" ]; then
+            echo "Error: eas.json not found! Make sure it exists in the root folder."
+            exit 1
+          fi
+      - name: Log in to Expo
+        script: npx expo login --non-interactive --username "$EXPO_USERNAME" --password "$EXPO_PASSWORD"
       - name: Build Android APK
-        script: npx eas build --platform android --profile preview --non-interactive
+        script: npx eas build --platform android --profile development --non-interactive
       - name: Build iOS IPA
-        script: npx eas build --platform ios --profile preview --non-interactive
+        script: npx eas build --platform ios --profile development --non-interactive
     artifacts:
       - build/**/android/**/*.apk
       - build/**/ios/**/*.ipa
